@@ -9,9 +9,16 @@ router.get('/', (req, res, next) => {
     /*console.log(adminData.products);
     res.sendFile(path.join(rootDir, 'views', 'shop.html'));*/
 
-    //render site with a pug template
+    //render site with a pug & handlebars template
     const products = adminData.products;
-    res.render('shop', {prods: products, pageTitle: 'Shop', path: '/'});
+    res.render('shop', {
+        prods: products,
+        pageTitle: 'Shop',
+        path: '/',
+        hasProducts: products.length > 0,
+        activeShop: true,
+        productCss: true
+    });
 });
 
 module.exports = router;
