@@ -7,6 +7,7 @@ const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
 const csrf = require('csurf');
 const flash = require('connect-flash');
+require('dotenv').config();
 
 const errorController = require('./controllers/error');
 const User = require('./models/user');
@@ -15,13 +16,11 @@ const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
 const authRoutes = require('./routes/auth');
 
-const MONGODB_URI = 'mongodb+srv://user:L0rdR3van@node-shop.vtbu2.mongodb.net/shop';
-
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 
 const store = new MongoDBStore({
-    uri: MONGODB_URI,
+    uri: process.env.MONGODB_URI,
     collection: 'sessions'
 });
 const csrfProtection = csrf();
@@ -68,7 +67,7 @@ app.use(authRoutes);
 app.use(errorController.get404);
 
 mongoose
-    .connect(MONGODB_URI)
+    .connect(process.env.MONGODB_URI)
     .then(result => {
         app.listen(3000, () => {
             console.log('Server started on port 3000');
