@@ -106,7 +106,11 @@ exports.postLogin = (req, res, next) => {
                     res.redirect('/login');
                 });
         })
-        .catch(err => console.log(err));
+        .catch(err => {
+            const error = new Error(err);
+            error.httpStatusCode = 500;
+            return next(error);
+        });
 };
 
 exports.postSignup = (req, res, next) => {
@@ -212,7 +216,11 @@ exports.postReset = (req, res, next) => {
                 req.flash('success', 'Success! Check your email for the link to reset your password.');
                 res.redirect('/login');
             })
-            .catch(err => console.log(err));
+            .catch(err => {
+                const error = new Error(err);
+                error.httpStatusCode = 500;
+                return next(error);
+            });
     });
 }
 
@@ -237,7 +245,11 @@ exports.getNewPassword = (req, res, next) => {
                 userId: user._id.toString(),
                 passwordToken: token
             });
-        }).catch(err => console.log(err));
+        }).catch(err => {
+            const error = new Error(err);
+            error.httpStatusCode = 500;
+            return next(error);
+    });
 }
 
 exports.postNewPassword = (req, res, next) => {
@@ -260,5 +272,9 @@ exports.postNewPassword = (req, res, next) => {
     }).then(result => {
         req.flash('success', 'Success! Your password has been changed.');
         res.redirect('/login');
-    }).catch(err => console.log(err));
+    }).catch(err => {
+        const error = new Error(err);
+        error.httpStatusCode = 500;
+        return next(error);
+    });
 }

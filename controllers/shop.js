@@ -1,3 +1,8 @@
+const fs = require('fs');
+const path = require('path');
+
+const PDFDocument = require('pdfkit');
+
 const  Product  = require('../models/product');
 const Order = require('../models/order');
 
@@ -11,7 +16,11 @@ exports.getProducts = (req, res, next) => {
                 path: '/'
             });
         })
-        .catch(err => console.log(err));
+        .catch(err => {
+            const error = new Error(err);
+            error.httpStatusCode = 500;
+            return next(error);
+        });
 }
 
 exports.getProduct = (req, res, next) => {
@@ -24,7 +33,11 @@ exports.getProduct = (req, res, next) => {
 
         });
     })
-        .catch(err => console.log(err));
+        .catch(err => {
+            const error = new Error(err);
+            error.httpStatusCode = 500;
+            return next(error);
+        });
 }
 
 exports.getIndex = (req, res, next) => {
@@ -37,7 +50,11 @@ exports.getIndex = (req, res, next) => {
                 path: '/'
             });
         })
-        .catch(err => console.log(err));
+        .catch(err => {
+            const error = new Error(err);
+            error.httpStatusCode = 500;
+            return next(error);
+        });
 };
 
 exports.getCart = (req, res, next) => {
@@ -51,7 +68,12 @@ exports.getCart = (req, res, next) => {
                 pageTitle: 'Your Cart',
                 products: products
             });
-        }).catch(err => console.log(err));
+        })
+        .catch(err => {
+            const error = new Error(err);
+            error.httpStatusCode = 500;
+            return next(error);
+        });
 }
 
 exports.postCart = (req, res, next) => {
@@ -73,7 +95,12 @@ exports.postCartDeleteProduct = (req, res, next) => {
         .then(() => {
             console.log('Product deleted from cart');
             res.redirect('/cart');
-        }).catch(err => console.log(err));
+        })
+        .catch(err => {
+            const error = new Error(err);
+            error.httpStatusCode = 500;
+            return next(error);
+        });
 }
 
 exports.postOrder = (req, res, next) => {
@@ -103,7 +130,11 @@ exports.postOrder = (req, res, next) => {
         .then(() => {
             res.redirect('/orders');
         })
-        .catch(err => console.log(err));
+        .catch(err => {
+            const error = new Error(err);
+            error.httpStatusCode = 500;
+            return next(error);
+        });
 }
 
 exports.getOrders = (req, res, next) => {
@@ -115,6 +146,51 @@ exports.getOrders = (req, res, next) => {
                 pageTitle: 'Your Orders',
                 orders: orders
             });
-        }).catch(err => console.log(err));
+        })
+        .catch(err => {
+            const error = new Error(err);
+            error.httpStatusCode = 500;
+            return next(error);
+        });
+}
+
+exports.getInvoice = (req, res, next) => {
+    const orderId = req.params.orderId;
+    Order.findById(orderId)
+        .then(order => {
+            if (!order) {
+                return next(new Error('No order found.'));
+            }
+            if (order.user.userId.toString() !== req.user._id.toString()) {
+                return next(new Error('Unauthorized'));
+            }
+
+            const invoiceName = 'invoice-' + orderId + '.pdf';
+            const invoicePath = path.join('data', 'invoices', invoiceName);
+
+            const pdfDoc = new PDFDocument();
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', 'attachment; filename="' + invoiceName + '"');
+            pdfDoc.pipe(fs.createWriteStream(invoicePath));
+            pdfDoc.pipe(res);
+
+            pdfDoc.fontSize(26).text('Invoice No: ' + orderId, {
+                underline: true
+            });
+            pdfDoc.text('-----------------------');
+            let totalPrice = 0;
+            order.products.forEach(prod => {
+                totalPrice += prod.quantity * prod.product.price;
+                pdfDoc.fontSize(14).text(prod.product.title + ' - ' + prod.quantity + ' x ' +  '$' + prod.product.price);
+            });
+            pdfDoc.text('-----------------------');
+            pdfDoc.fontSize(16).text('Total Price: $' + totalPrice);
+            pdfDoc.end();
+        })
+        .catch(err => {
+            const error = new Error(err);
+            error.httpStatusCode = 500;
+            return next(error);
+        })
 }
 
